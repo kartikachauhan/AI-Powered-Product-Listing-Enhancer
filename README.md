@@ -1,152 +1,114 @@
-## AI-Powered Product Listing Enhancer
+# AI-Powered Product Listing Enhancer
 
-### Overview
-Create a small web app where a merchant can:
-1) Upload a product image and enter minimal details (title, category, price)
-2) Generate an AI‑suggested product description
-3) Review/edit the suggestion before saving the listing
+   A small, clean, componentized web app where a merchant can upload a product, generate an AI-suggested description, edit it inline, and save the listing with a live preview.
 
-Clean, fast, componentized UI with a simple state flow and a small, well‑structured codebase.
+   1. Left: Form (title, category, price, image) + Generate Description (spinner on button) + Edit Description (only after generation) + Save.
 
-### User Story
-As a merchant, I want to upload a product and get a high‑quality description suggestion so I can publish faster with consistent tone and SEO keywords.
+   2. Right: Preview only (live card; no editor).
 
-### MVP Scope
-- **Product form & preview**
-  - Inputs: title (text), category (select), price (number), image (upload/preview)
-  - Live product card preview (title, price, image, description)
-- **AI description**
-  - Button: “Generate description” calls a text generation endpoint (real or mocked)
-  - Show the suggestion, allow inline edit
-- **Save**
-  - “Save listing” stores the final object in memory (or local storage) and shows a confirmation/toast
-  - Minimal “My Listings” view listing saved products (title + thumbnail)
+   3. Listings: Minimal “My Listings” grid (title, thumbnail, price, short description).
 
-### Non‑Functional Expectations
-- **Snappy UX**: optimistic updates, loading/error/empty states
-- **Clean architecture**: separation of concerns between form, preview, AI interaction, listings
-- **Accessibility**: keyboard navigation for form/buttons; descriptive alt text for images
+## How to run it locally
 
-## Data Model
-```json
-{
-  "id": "uuid",
-  "title": "string",
-  "category": "string",
-  "price": 0,
-  "imageUrl": "string",
-  "description": "string",
-  "meta": { "seoKeywords": ["string"], "language": "en" }
-}
-```
+## Prereqs: Node 18+ and npm (or yarn/pnpm).
 
-## AI API
-- **Option A — Real AI API**: Call your preferred text generation API with product details.
-- **Option B — Mock**: Expose `POST /api/generate-description` that returns a parameterized canned response.
+   # 1. Install
+   npm i
 
-### Example Contract (Mock)
-Request:
-```json
-{
-  "title": "Wireless Earbuds",
-  "category": "Audio",
-  "price": 59.99,
-  "imageDataUrl": "data:image/png;base64,..."
-}
-```
-Response:
-```json
-{
-  "description": "Experience crystal‑clear audio with Bluetooth 5.3...",
-  "meta": {
-    "seoKeywords": ["wireless earbuds", "bluetooth", "noise cancelling"],
-    "language": "en"
-  }
-}
-```
+   # 2. Run dev server
+   npm run dev
+   # open the printed local URL
 
-## UX Details
-- Image upload preview (data URL is fine)
-- Generate button disabled while generating; show spinner
-- Editable description after generation
-- Preview card updates live as fields change
-- Listings view uses in‑memory/local storage data
+   # (Optional) Production build
+   npm run build
+   npm run preview
 
-## Suggested Architecture
-```
-AI-Powered-Product-Listing-Enhancer/
-  ├─ web/                      # Frontend SPA (e.g., React + TypeScript + Vite)
-  │   ├─ src/
-  │   │   ├─ components/
-  │   │   │   ├─ ProductForm.tsx
-  │   │   │   ├─ PreviewCard.tsx
-  │   │   │   ├─ DescriptionEditor.tsx
-  │   │   │   └─ ListingsView.tsx
-  │   │   ├─ hooks/
-  │   │   ├─ store/            # Local state + localStorage sync
-  │   │   └─ api/              # Client calls to /api/generate-description
-  │   └─ index.html
-  └─ api/                      # Mock or real API
-      └─ generate-description.(ts|js)
-```
+Stack: Vite + React + TypeScript + styled-components + react-hook-form + zod + Zustand.
 
-## Getting Started
+# Project structure (high level)
 
-### Prerequisites
-- Node.js >= 18
-- npm / pnpm / yarn
+   src/
+   components/
+      ProductForm/ProductForm.tsx        # Form + Generate + Editor (left pane)
+      ProductPreview/ProductPreview.tsx  # Preview-only card (right pane)
+      ListingsView/ListingsView.tsx      # Saved products grid
+      common/Toast.tsx                   # Reusable toast
+   store/
+      productStore.ts                    # Zustand store (products, isGenerating, error/success)
+   api/
+      productApi.ts                      # (Optional) Real AI calls; mockable
+   App.tsx                              # Page layout + wiring
+   main.tsx                             # App bootstrap (theme, global styles, etc.)
 
-### Setup (illustrative)
-```bash
-git clone <YOUR_REPO_URL>
-cd AI-Powered-Product-Listing-Enhancer
-npm install
-cp .env.example .env  # only needed if using a real AI provider
-```
 
-### Environment Variables (when using a real model)
-- `OPENAI_API_KEY` or other provider key
-- `MODEL_NAME` (e.g., `gpt-4o-mini`, `claude-3.5`, etc.)
-- `TEMPERATURE`, `MAX_TOKENS` (optional)
+# Design notes
 
-### Run (illustrative)
-```bash
-# Start frontend and mock API
-npm run dev
+   ## State management
+      1. Zustand store (productStore.ts) holds:
+         1. products[] (persisted to localStorage), isGenerating, error, success
+         2. actions: generateDescriptionForProduct, addProductWithDescription, clearMessages, etc.
 
-# Build
-npm run build
-```
+      2. Form state in ProductForm.tsx via react-hook-form + zod.
 
-## Accessibility Checklist
-- All images have descriptive `alt` text
-- Form controls have labels and keyboard focus styles
-- Buttons are reachable and operable via keyboard
-- Announce loading states and errors where applicable
+      3. The generated description lives in App.tsx and is passed to both the Form (for editing) and the Preview (for display), keeping a single source of truth for the description string.
 
-## Quality
-```bash
-# Lint/format/tests (replace with actual project scripts)
-npm run lint
-npm run format
-npm test
-```
+   ## Component structure
 
-## Roadmap
-- [ ] Real AI provider integration (swap the mock)
-- [ ] SEO settings (tone presets, keyword controls)
-- [ ] Batch uploads
-- [ ] i18n (multi‑language UI and outputs)
+      1. App.tsx – 2-column layout, wires store → form/preview, renders Toast for success/error, shows ListingsView below.
 
-## Contributing
-1) Create a feature branch
-2) Commit with clear messages
-3) Add/adjust tests
-4) Open a PR with context and screenshots for UI changes
+      2. ProductForm.tsx – inputs, Generate button (shows spinner while generating), Edit Description textarea (only after generation), and Save Listing.
 
-## License
-Specify your license (e.g., MIT).
+      3. ProductPreview.tsx – preview-only card (title, category, price, image, description). Shows a gentle “Generating…” state inside the card while AI runs.
 
-## Acknowledgements
-- Thanks to the AI/OSS communities that make rapid prototyping possible.
+      4. ListingsView.tsx – shows saved products (title, thumbnail, category, price, clamped description).
 
+      5. common/Toast.tsx – reusable toast with type, message, duration, position.
+
+   ## Loading / Error / Empty
+
+      1. Generate button is disabled until all required fields are present; shows an inline spinner + “Generating…” while running.
+
+      2. error/success from the store are surfaced via the Toast (auto-dismiss).
+
+      3. Preview and Listings show friendly empty states.
+
+   ## Accessibility
+
+      1. Labeled inputs, keyboard focusable actions, descriptive alt text for images, and screen-reader friendly toast (role="status", aria-live="polite").
+
+# AI integration approach
+   ##Option B (default): Mocked AI
+
+      1. productStore.generateDescriptionForProduct() returns a parameterized canned response using the current form inputs (no network calls). Great for demo/offline.
+
+   ##Option A: Real AI API
+
+      1. Implement a call in productApi.ts to your provider (OpenAI/others) and have the store use it.
+
+      2. Suggested environment variables (example):
+            VITE_USE_MOCK_AI=false
+            AI_PROVIDER=openai
+            OPENAI_API_KEY=sk-...
+
+      3. The function should return:
+            { description: string, meta?: { seoKeywords?: string[], language?: string } }
+
+      4. Add basic retry/backoff and surface failures via error (Toast will display it).
+
+   Images are stored as data URLs when saving (so the grid survives reloads without a backend). For production, upload to S3/Cloud Storage and store only the URL.
+
+# Scaling plan (≤ 300 words)
+
+   1. Data & storage. Move from localStorage to a backend (Postgres with Prisma, or DynamoDB). Store images in S3/Cloud Storage and persist only imageUrl. Add created/updated timestamps and indexes (merchant ID, category, title).
+
+   2. API & concurrency. Expose REST/GraphQL with cursor-based pagination. Make description generation asynchronous: enqueue jobs (SQS/Cloud Tasks), and notify clients via WebSocket/SSE or client-side polling. Use idempotency keys and per-merchant rate limits.
+
+   3. Performance. Virtualize long lists (react-window) and lazy-load responsive images. CDN static assets and images. Split bundles by route and prefetch on hover. Client cache with SWR/tanstack-query (stale-while-revalidate). Cache popular GETs at the edge.
+
+   4. Reliability & cost. Add retries/backoff and circuit breakers around AI calls. Cache prompt→result pairs by hashing inputs to avoid re-billing. Gracefully degrade to a templated baseline copy if the AI provider is down.
+
+   5. Security & multi-tenancy. AuthN (OAuth/JWT) and per-merchant AuthZ on records. Validate and sanitize inputs server-side. Signed upload URLs for images.
+
+   6. Observability. Centralized logs, metrics (p95 latency, error rate, token spend), and traces. Feature flags to roll out new AI models/providers safely.
+
+   7. DX & quality. Keep domain logic in the store; presentational components dumb. Add unit tests for store/actions and component tests for the form→preview flow. CI: typecheck, lint, tests, preview deploys. Document failure/empty/loading states and UX contracts.
