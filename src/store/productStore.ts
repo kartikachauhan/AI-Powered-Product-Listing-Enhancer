@@ -1,8 +1,64 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
 import { Product, ProductInput, AIGenerationResponse } from '@/types/product';
 import { generateDescription } from '@/api/productApi';
+
+const memoryFallback = new Map<string, string>();
+
+const resilientStorage = createJSONStorage(() => ({
+  getItem: (name: string) => {
+    try {
+      return localStorage.getItem(name);
+    } catch {
+      return memoryFallback.get(name) ?? null;
+    }
+  },
+  setItem: (name: string, value: string) => {
+    try {
+      localStorage.setItem(name, value);
+    } catch (e) {
+      console.warn('[persist] falling back to memory:', e);
+      memoryFallback.set(name, value);
+    }
+  },
+  removeItem: (name: string) => {
+    try {
+      localStorage.removeItem(name);
+    } catch {
+      memoryFallback.delete(name);
+    }
+  },
+}));
+
+const resizeToDataURL = async (
+  file: File,
+  maxDim = 1024,
+  quality = 0.7
+): Promise<string> => {
+  const img = await new Promise<HTMLImageElement>((res, rej) => {
+    const i = new Image();
+    i.onload = () => res(i);
+    i.onerror = rej;
+    i.src = URL.createObjectURL(file);
+  });
+
+  const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+  const w = Math.max(1, Math.round(img.width * scale));
+  const h = Math.max(1, Math.round(img.height * scale));
+
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d')!;
+  ctx.drawImage(img, 0, 0, w, h);
+
+  const dataUrl = canvas.toDataURL('image/jpeg', quality);
+  URL.revokeObjectURL(img.src);
+  return dataUrl;
+};
+
+const MAX_ITEMS = 50;
 
 interface ProductState {
   products: Product[];
@@ -30,24 +86,20 @@ type ProductStore = ProductState & ProductActions;
 export const useProductStore = create<ProductStore>()(
   persist(
     (set, get) => ({
-      // Initial state
       products: [],
       selectedProductId: null,
       isGenerating: false,
       error: null,
       success: null,
 
-      // Actions
       addProduct: async (productInput: ProductInput) => {
         try {
           set({ isGenerating: true, error: null, success: null });
-          
-          // Generate AI description
+
           const aiResponse = await get().generateDescriptionForProduct(productInput);
-          
-          // Convert File to data URL for storage
-          const imageUrl = await fileToDataURL(productInput.imageFile);
-          
+
+          const imageUrl = await resizeToDataURL(productInput.imageFile);
+
           const newProduct: Product = {
             id: uuidv4(),
             title: productInput.title,
@@ -57,24 +109,23 @@ export const useProductStore = create<ProductStore>()(
             description: aiResponse.description,
             meta: aiResponse.meta,
             createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
+            updatedAt: new Date().toISOString(),
           };
 
           set((state) => ({
-            products: [...state.products, newProduct],
+            products: [...state.products, newProduct].slice(-MAX_ITEMS),
             selectedProductId: newProduct.id,
             isGenerating: false,
-            success: 'Product description generated successfully!'
+            success: 'Product description generated successfully!',
           }));
 
-          // Clear success message after 3 seconds
           setTimeout(() => {
             set({ success: null });
           }, 3000);
         } catch (error) {
-          set({ 
+          set({
             error: error instanceof Error ? error.message : 'Failed to generate product description',
-            isGenerating: false 
+            isGenerating: false,
           });
         }
       },
@@ -82,10 +133,9 @@ export const useProductStore = create<ProductStore>()(
       addProductWithDescription: async (productInput: ProductInput, description: string) => {
         try {
           set({ isGenerating: true, error: null, success: null });
-          
-          // Convert File to data URL for storage
-          const imageUrl = await fileToDataURL(productInput.imageFile);
-          
+
+          const imageUrl = await resizeToDataURL(productInput.imageFile);
+
           const newProduct: Product = {
             id: uuidv4(),
             title: productInput.title,
@@ -99,29 +149,28 @@ export const useProductStore = create<ProductStore>()(
                 productInput.category.toLowerCase(),
                 'premium quality',
                 'best value',
-                'top rated'
+                'top rated',
               ],
-              language: 'en'
+              language: 'en',
             },
             createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
+            updatedAt: new Date().toISOString(),
           };
 
           set((state) => ({
-            products: [...state.products, newProduct],
+            products: [...state.products, newProduct].slice(-MAX_ITEMS),
             selectedProductId: newProduct.id,
             isGenerating: false,
-            success: 'Product listing saved successfully!'
+            success: 'Product listing saved successfully!',
           }));
 
-          // Clear success message after 3 seconds
           setTimeout(() => {
             set({ success: null });
           }, 3000);
         } catch (error) {
-          set({ 
+          set({
             error: error instanceof Error ? error.message : 'Failed to save product listing',
-            isGenerating: false 
+            isGenerating: false,
           });
         }
       },
@@ -132,7 +181,7 @@ export const useProductStore = create<ProductStore>()(
             product.id === id
               ? { ...product, ...updates, updatedAt: new Date().toISOString() }
               : product
-          )
+          ),
         }));
       },
 
@@ -140,10 +189,9 @@ export const useProductStore = create<ProductStore>()(
         set((state) => ({
           products: state.products.filter((product) => product.id !== id),
           selectedProductId: state.selectedProductId === id ? null : state.selectedProductId,
-          success: 'Product deleted successfully!'
+          success: 'Product deleted successfully!',
         }));
 
-        // Clear success message after 3 seconds
         setTimeout(() => {
           set({ success: null });
         }, 3000);
@@ -173,39 +221,29 @@ export const useProductStore = create<ProductStore>()(
         try {
           const response = await generateDescription(productInput);
           return response;
-        } catch (error) {
+        } catch {
           throw new Error('Failed to generate AI description. Please try again.');
         }
-      }
+      },
     }),
     {
       name: 'product-store',
-      partialize: (state) => ({ 
+      partialize: (state) => ({
         products: state.products,
-        selectedProductId: state.selectedProductId 
+        selectedProductId: state.selectedProductId,
       }),
+      storage: resilientStorage,
       onRehydrateStorage: () => (state) => {
         console.log('Product store rehydrated:', state);
-      }
+      },
     }
   )
 );
 
-// Helper function to convert File to data URL
-const fileToDataURL = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-};
-
-// Selector hooks for performance optimization
 export const useProducts = () => useProductStore((state) => state.products);
 export const useSelectedProduct = () => {
-  const { products, selectedProductId } = useProductStore();
-  return products.find(p => p.id === selectedProductId) || null;
+  const { products, selectedProductId } = useProductStore.getState();
+  return products.find((p) => p.id === selectedProductId) || null;
 };
 export const useIsGenerating = () => useProductStore((state) => state.isGenerating);
 export const useError = () => useProductStore((state) => state.error);
