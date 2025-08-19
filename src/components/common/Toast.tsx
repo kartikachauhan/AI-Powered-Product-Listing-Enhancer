@@ -56,7 +56,7 @@ const MessageText = styled.p`
 
 const CloseButton = styled.button`
   position: absolute;
-  top: ${theme.spacing.sm};
+  top: ${theme.spacing.xs};
   right: ${theme.spacing.sm};
   background: none;
   border: none;

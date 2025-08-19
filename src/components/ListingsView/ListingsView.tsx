@@ -46,9 +46,9 @@ const ProductsGrid = styled.div`
   }
 `;
 
-const ProductCard = styled.div<{ isSelected: boolean }>`
-  border: 2px solid ${({ isSelected }) => 
-    isSelected ? theme.colors.primary[500] : theme.colors.gray[200]
+const ProductCard = styled.div<{ $isSelected: boolean }>`
+  border: 2px solid ${({ $isSelected }) => 
+    $isSelected ? theme.colors.primary[500] : theme.colors.gray[200]
   };
   border-radius: ${theme.borderRadius.lg};
   overflow: hidden;
@@ -57,8 +57,8 @@ const ProductCard = styled.div<{ isSelected: boolean }>`
   cursor: pointer;
   
   &:hover {
-    border-color: ${({ isSelected }) => 
-      isSelected ? theme.colors.primary[600] : theme.colors.gray[300]
+    border-color: ${({ $isSelected }) => 
+      $isSelected ? theme.colors.primary[600] : theme.colors.gray[300]
     };
     box-shadow: ${theme.shadows.lg};
     transform: translateY(-2px);
@@ -212,7 +212,7 @@ export const ListingsView: React.FC = () => {
         {products.map((product) => (
           <ProductCard
             key={product.id}
-            isSelected={selectedProductId === product.id}
+            $isSelected={selectedProductId === product.id}
             onClick={() => handleProductClick(product.id)}
             role="button"
             tabIndex={0}
