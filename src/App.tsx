@@ -5,7 +5,7 @@ import { ProductForm } from '@/components/ProductForm/ProductForm';
 import { ProductPreview } from '@/components/ProductPreview/ProductPreview';
 import { ListingsView } from '@/components/ListingsView/ListingsView';
 import { useProductStore, useError, useSuccess } from '@/store/productStore';
-import { ProductInput } from '@/types/product';
+import { ProductCategory, ProductInput } from '@/types/product';
 import { Toast } from '@/components/common/Toast';
 
 const AppContainer = styled.div`
@@ -102,7 +102,7 @@ export const App: React.FC = () => {
     try {
       const productData: ProductInput = {
         title: formData.title,
-        category: formData.category as any,
+        category: formData.category as ProductCategory,
         price: formData.price as number,
         imageFile: formData.imageFile as File
       };

@@ -25,7 +25,6 @@ export const GlobalStyles = createGlobalStyle`
     line-height: ${theme.typography.lineHeights.normal};
   }
 
-  // Reset form elements
   button, input, select, textarea {
     font-family: inherit;
     font-size: inherit;
@@ -45,25 +44,21 @@ export const GlobalStyles = createGlobalStyle`
     background: none;
   }
 
-  // Image handling
   img {
     max-width: 100%;
     height: auto;
     display: block;
   }
 
-  // Link styling
   a {
     color: inherit;
     text-decoration: none;
   }
 
-  // List styling
   ul, ol {
     list-style: none;
   }
 
-  // Focus styles for accessibility
   button:focus-visible,
   input:focus-visible,
   select:focus-visible,
@@ -74,7 +69,6 @@ export const GlobalStyles = createGlobalStyle`
     border-radius: ${theme.borderRadius.sm};
   }
 
-  // Remove focus outline for mouse users
   button:focus:not(:focus-visible),
   input:focus:not(:focus-visible),
   select:focus:not(:focus-visible),
@@ -83,19 +77,16 @@ export const GlobalStyles = createGlobalStyle`
     outline: none;
   }
 
-  // Smooth transitions for interactive elements
   button, input, select, textarea {
     transition: all ${theme.transitions.normal};
   }
 
-  // High contrast mode support
   @media (prefers-contrast: high) {
     * {
       border-color: currentColor !important;
     }
   }
 
-  // Reduced motion support
   @media (prefers-reduced-motion: reduce) {
     * {
       animation-duration: 0.01ms !important;
@@ -104,7 +95,6 @@ export const GlobalStyles = createGlobalStyle`
     }
   }
 
-  // Print styles
   @media print {
     * {
       background: transparent !important;

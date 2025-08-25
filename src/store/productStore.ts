@@ -241,10 +241,8 @@ export const useProductStore = create<ProductStore>()(
 );
 
 export const useProducts = () => useProductStore((state) => state.products);
-export const useSelectedProduct = () => {
-  const { products, selectedProductId } = useProductStore.getState();
-  return products.find((p) => p.id === selectedProductId) || null;
-};
+export const useSelectedProduct = () =>
+  useProductStore(s => s.products.find(p => p.id === s.selectedProductId) ?? null);
 export const useIsGenerating = () => useProductStore((state) => state.isGenerating);
 export const useError = () => useProductStore((state) => state.error);
 export const useSuccess = () => useProductStore((state) => state.success);

@@ -79,7 +79,7 @@ Stack: Vite + React + TypeScript + styled-components + react-hook-form + zod + Z
 # AI integration approach
    ##Option B (default): Mocked AI
 
-      1. productStore.generateDescriptionForProduct() returns a parameterized canned response using the current form inputs (no network calls). Great for demo/offline.
+      1. productStore.generateDescriptionForProduct() returns a parameterized canned response using the current form inputs (no network calls).
 
    ##Option A: Real AI API
 

@@ -42,9 +42,9 @@ const ToastContainer = styled.div<Required<Pick<ToastProps, 'position'>> & { $ty
 
   ${({ $type }) => {
     const bg = ($type === 'success') ? theme.colors.success?.[500]
-             : ($type === 'error') ? theme.colors.error?.[500]
-             : ($type === 'warning') ? (theme.colors.warning?.[500] || theme.colors.primary[600])
-             : theme.colors.primary[600];
+      : ($type === 'error') ? theme.colors.error?.[500]
+        : ($type === 'warning') ? (theme.colors.warning?.[500] || theme.colors.primary[600])
+          : theme.colors.primary[600];
     return `background-color: ${bg};`;
   }}
 `;
@@ -91,7 +91,7 @@ export const Toast: React.FC<ToastProps> = ({
   if (!message) return null;
 
   return (
-    <ToastContainer role="status" aria-live="polite" position={position} $type={type} $offset={offset}>
+    <ToastContainer role="status" aria-live={type === 'error' ? 'assertive' : 'polite'} position={position} $type={type} $offset={offset}>
       <MessageText>{message}</MessageText>
       {onClose && (
         <CloseButton onClick={onClose} aria-label="Close message">×</CloseButton>

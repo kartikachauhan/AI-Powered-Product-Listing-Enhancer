@@ -97,18 +97,32 @@ const LoadingIndicator = styled.div`
 `;
 
 export const ProductPreview: React.FC<ProductPreviewProps> = ({ formData, generatedDescription, isGenerating = false }) => {
-  const hasImage = !!formData.imageFile;
   const hasTitle = !!formData.title?.trim();
   const hasPrice = typeof formData.price === 'number' && !isNaN(formData.price);
   const desc = generatedDescription?.trim() || '';
+  const [objectUrl, setObjectUrl] = React.useState<string | undefined>(undefined);
+  const hasImage = !!objectUrl;
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const file = formData.imageFile;
+    if (!file) {
+      setObjectUrl(undefined);
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    setObjectUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [formData.imageFile]);
 
   return (
     <PreviewContainer>
       <PreviewTitle>Product Preview</PreviewTitle>
       <ProductCard>
         <ProductImage hasImage={hasImage}>
-          {formData.imageFile ? (
-            <img src={URL.createObjectURL(formData.imageFile)} alt={formData.title || 'Product image'} aria-label="Product image preview" />
+          {hasImage ? (
+            <img src={objectUrl} alt={formData.title || 'Product image'} aria-label="Product image preview" loading="lazy"
+              decoding="async" />
           ) : null}
         </ProductImage>
         <ProductInfo>
